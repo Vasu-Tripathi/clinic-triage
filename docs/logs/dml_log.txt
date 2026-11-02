@@ -1,0 +1,245 @@
+Border style is 2.
+Null display is "∅".
+BEGIN;
+BEGIN
+INSERT INTO branches(name, street, pincode, phone, opens_at, closes_at)
+VALUES ('HSR Layout Clinic', '27th Main, Sector 2, HSR Layout', '560102', '+918041234504', '08:30', '20:30')
+RETURNING branch_id, name;
++-----------+-------------------+
+| branch_id |       name        |
++-----------+-------------------+
+|         5 | HSR Layout Clinic |
++-----------+-------------------+
+(1 row)
+
+INSERT 0 1
+UPDATE doctors SET consultation_fee = consultation_fee * 1.10
+WHERE spec_id = (SELECT spec_id FROM specializations WHERE name = 'Dermatology')
+RETURNING doctor_id, consultation_fee;
++-----------+------------------+
+| doctor_id | consultation_fee |
++-----------+------------------+
+|         6 |           770.00 |
+|         7 |           715.00 |
++-----------+------------------+
+(2 rows)
+
+UPDATE 2
+UPDATE appointments SET status = 'cancelled'
+WHERE appt_id = (SELECT min(appt_id) FROM appointments WHERE status = 'booked')
+RETURNING appt_id, status;
++---------+-----------+
+| appt_id |  status   |
++---------+-----------+
+|      11 | cancelled |
++---------+-----------+
+(1 row)
+
+UPDATE 1
+SELECT appt_id, status FROM payments
+WHERE appt_id = (SELECT min(appt_id) FROM appointments WHERE status = 'cancelled' AND start_time > now());
++---------+----------+
+| appt_id |  status  |
++---------+----------+
+|      11 | refunded |
++---------+----------+
+(1 row)
+
+DELETE FROM branches WHERE name = 'HSR Layout Clinic' RETURNING branch_id;
++-----------+
+| branch_id |
++-----------+
+|         5 |
++-----------+
+(1 row)
+
+DELETE 1
+ROLLBACK;
+ROLLBACK
+SELECT a.appt_id, a.start_time, pu.full_name AS patient, du.full_name AS doctor, s.name AS specialization,
+       b.name AS branch, p.amount, p.status AS payment
+FROM appointments a
+JOIN users pu ON pu.user_id = a.patient_id
+JOIN users du ON du.user_id = a.doctor_id
+JOIN doctors d ON d.doctor_id = a.doctor_id
+JOIN specializations s ON s.spec_id = d.spec_id
+JOIN branches b ON b.branch_id = a.branch_id
+LEFT JOIN payments p ON p.appt_id = a.appt_id
+WHERE a.status = 'booked'
+ORDER BY a.start_time;
++---------+---------------------+----------------+--------------------+----------------+--------------------+---------+---------+
+| appt_id |     start_time      |    patient     |       doctor       | specialization |       branch       | amount  | payment |
++---------+---------------------+----------------+--------------------+----------------+--------------------+---------+---------+
+|      18 | 2026-11-03 09:40:00 | Arnav Reddy    | Dr. Vikram Shetty  | Cardiology     | Koramangala Clinic | 1200.00 | paid    |
+|      15 | 2026-11-03 12:00:00 | Imran Ali      | Dr. Harish Gowda   | Urology        | Whitefield Clinic  |  900.00 | paid    |
+|      11 | 2026-11-03 14:00:00 | Deepa Srinivas | Dr. Pooja Malhotra | Gynecology     | Jayanagar Clinic   |  900.00 | paid    |
+|      13 | 2026-11-04 10:00:00 | Arnav Reddy    | Dr. Rohan Kulkarni | Dermatology    | Whitefield Clinic  |  650.00 | paid    |
+|      16 | 2026-11-04 14:30:00 | Neha Agarwal   | Dr. Shalini Murthy | Pediatrics     | Koramangala Clinic |  600.00 | paid    |
+|      12 | 2026-11-04 15:00:00 | Manoj Kumar    | Dr. Fatima Sheikh  | Pulmonology    | Whitefield Clinic  |  900.00 | paid    |
+|      14 | 2026-11-05 11:00:00 | Sara Thomas    | Dr. Suresh Pillai  | Ophthalmology  | Jayanagar Clinic   |  800.00 | paid    |
++---------+---------------------+----------------+--------------------+----------------+--------------------+---------+---------+
+(7 rows)
+
+SELECT b.name AS branch, count(a.appt_id) AS appts,
+       sum(p.amount) FILTER (WHERE p.status = 'paid') AS revenue,
+       round(avg(p.amount), 2) AS avg_ticket
+FROM branches b
+JOIN appointments a ON a.branch_id = b.branch_id
+JOIN payments p ON p.appt_id = a.appt_id
+GROUP BY b.name
+HAVING sum(p.amount) FILTER (WHERE p.status = 'paid') > 4000
+ORDER BY revenue DESC;
++--------------------+-------+---------+------------+
+|       branch       | appts | revenue | avg_ticket |
++--------------------+-------+---------+------------+
+| Koramangala Clinic |     7 | 5800.00 |     900.00 |
+| Jayanagar Clinic   |     6 | 5350.00 |     891.67 |
++--------------------+-------+---------+------------+
+(2 rows)
+
+SELECT u.full_name, s.name AS specialization, d.consultation_fee
+FROM doctors d JOIN users u ON u.user_id = d.doctor_id JOIN specializations s USING (spec_id)
+WHERE d.consultation_fee > (SELECT avg(d2.consultation_fee) FROM doctors d2 WHERE d2.spec_id = d.spec_id)
+ORDER BY s.name;
++---------------------+------------------+------------------+
+|      full_name      |  specialization  | consultation_fee |
++---------------------+------------------+------------------+
+| Dr. Vikram Shetty   | Cardiology       |          1200.00 |
+| Dr. Priya Nair      | Dermatology      |           700.00 |
+| Dr. Naveen Hegde    | ENT              |           700.00 |
+| Dr. Sanjay Gupta    | Gastroenterology |          1000.00 |
+| Dr. Ananya Rao      | General Medicine |           500.00 |
+| Dr. Arjun Bhat      | Neurology        |          1200.00 |
+| Dr. Rahul Deshpande | Orthopedics      |           800.00 |
+| Dr. Aditya Verma    | Psychiatry       |          1000.00 |
++---------------------+------------------+------------------+
+(8 rows)
+
+SELECT u.full_name, s.name AS specialization, b.name AS branch
+FROM doctors d JOIN users u ON u.user_id = d.doctor_id
+JOIN specializations s USING (spec_id) JOIN branches b USING (branch_id)
+WHERE NOT EXISTS (SELECT 1 FROM appointments a WHERE a.doctor_id = d.doctor_id)
+  AND d.branch_id IN (SELECT branch_id FROM appointments WHERE status = 'booked')
+ORDER BY b.name, u.full_name;
++--------------------+------------------+--------------------+
+|     full_name      |  specialization  |       branch       |
++--------------------+------------------+--------------------+
+| Dr. Meera Iyer     | Cardiology       | Jayanagar Clinic   |
+| Dr. Divya Krishnan | ENT              | Koramangala Clinic |
+| Dr. Kavya Reddy    | Neurology        | Koramangala Clinic |
+| Dr. Karthik Menon  | General Medicine | Whitefield Clinic  |
+| Dr. Lakshmi Prasad | Gastroenterology | Whitefield Clinic  |
+| Dr. Nisha Kapoor   | Psychiatry       | Whitefield Clinic  |
++--------------------+------------------+--------------------+
+(6 rows)
+
+WITH visits AS (
+  SELECT u.full_name, a.start_time::date AS day, s.name AS specialization,
+         row_number() OVER (PARTITION BY a.patient_id ORDER BY a.start_time) AS visit_no,
+         count(*)     OVER (PARTITION BY a.patient_id) AS total_visits
+  FROM appointments a JOIN users u ON u.user_id = a.patient_id
+  JOIN doctors d ON d.doctor_id = a.doctor_id JOIN specializations s USING (spec_id)
+  WHERE a.status <> 'cancelled')
+SELECT * FROM visits WHERE total_visits > 1 ORDER BY full_name, visit_no;
++----------------+------------+------------------+----------+--------------+
+|   full_name    |    day     |  specialization  | visit_no | total_visits |
++----------------+------------+------------------+----------+--------------+
+| Arnav Reddy    | 2026-10-28 | ENT              |        1 |            3 |
+| Arnav Reddy    | 2026-11-03 | Cardiology       |        2 |            3 |
+| Arnav Reddy    | 2026-11-04 | Dermatology      |        3 |            3 |
+| Deepa Srinivas | 2026-10-17 | Neurology        |        1 |            2 |
+| Deepa Srinivas | 2026-11-03 | Gynecology       |        2 |            2 |
+| Imran Ali      | 2026-10-24 | Psychiatry       |        1 |            2 |
+| Imran Ali      | 2026-11-03 | Urology          |        2 |            2 |
+| Manoj Kumar    | 2026-10-21 | Cardiology       |        1 |            2 |
+| Manoj Kumar    | 2026-11-04 | Pulmonology      |        2 |            2 |
+| Neha Agarwal   | 2026-10-26 | Endocrinology    |        1 |            2 |
+| Neha Agarwal   | 2026-11-04 | Pediatrics       |        2 |            2 |
+| Rahul Sharma   | 2026-10-15 | Gastroenterology |        1 |            2 |
+| Rahul Sharma   | 2026-11-03 | Orthopedics      |        2 |            2 |
+| Sara Thomas    | 2026-10-23 | Orthopedics      |        1 |            2 |
+| Sara Thomas    | 2026-11-05 | Ophthalmology    |        2 |            2 |
++----------------+------------+------------------+----------+--------------+
+(15 rows)
+
+SELECT * FROM fn_available_slots((SELECT user_id FROM users WHERE email = 'vikram.shetty@demo.clinic'),
+                                 CURRENT_DATE + CASE WHEN extract(dow FROM CURRENT_DATE + 1) = 0 THEN 2 ELSE 1 END)
+LIMIT 6;
++---------------------+---------------------+
+|     slot_start      |      slot_end       |
++---------------------+---------------------+
+| 2026-11-03 09:00:00 | 2026-11-03 09:20:00 |
+| 2026-11-03 09:20:00 | 2026-11-03 09:40:00 |
+| 2026-11-03 10:00:00 | 2026-11-03 10:20:00 |
+| 2026-11-03 10:20:00 | 2026-11-03 10:40:00 |
+| 2026-11-03 10:40:00 | 2026-11-03 11:00:00 |
+| 2026-11-03 11:00:00 | 2026-11-03 11:20:00 |
++---------------------+---------------------+
+(6 rows)
+
+SELECT u.full_name, l.*
+FROM doctors d JOIN users u ON u.user_id = d.doctor_id
+CROSS JOIN LATERAL fn_doctor_daily_load(d.doctor_id, CURRENT_DATE + 1) l
+WHERE l.total_appts > 0;
++---------------------+-----------+------------+-------------+--------+-----------+-----------+----------------+----------+-------------------+----------+---------+
+|      full_name      | doctor_id |    day     | total_appts | booked | completed | cancelled | booked_minutes | capacity | available_minutes | load_pct | revenue |
++---------------------+-----------+------------+-------------+--------+-----------+-----------+----------------+----------+-------------------+----------+---------+
+| Dr. Vikram Shetty   |         4 | 2026-11-03 |           1 |      1 |         0 |         0 |             20 |       16 |               480 |      6.3 | 1200.00 |
+| Dr. Rahul Deshpande |        12 | 2026-11-03 |           1 |      0 |         1 |         0 |             20 |       16 |               480 |      6.3 |  800.00 |
+| Dr. Pooja Malhotra  |        21 | 2026-11-03 |           1 |      1 |         0 |         0 |             20 |       16 |               480 |      6.3 |  900.00 |
+| Dr. Harish Gowda    |        22 | 2026-11-03 |           1 |      1 |         0 |         0 |             20 |       16 |               480 |      6.3 |  900.00 |
++---------------------+-----------+------------+-------------+--------+-----------+-----------+----------------+----------+-------------------+----------+---------+
+(4 rows)
+
+SELECT appt_id, doctor_name, start_time, patient_name, patient_age, status, payment_status
+FROM v_doctor_daily_schedule WHERE day = CURRENT_DATE + 1 ORDER BY doctor_name, start_time;
++---------+---------------------+---------------------+----------------+-------------+-----------+----------------+
+| appt_id |     doctor_name     |     start_time      |  patient_name  | patient_age |  status   | payment_status |
++---------+---------------------+---------------------+----------------+-------------+-----------+----------------+
+|      15 | Dr. Harish Gowda    | 2026-11-03 12:00:00 | Imran Ali      |          30 | booked    | paid           |
+|      11 | Dr. Pooja Malhotra  | 2026-11-03 14:00:00 | Deepa Srinivas |          48 | booked    | paid           |
+|      10 | Dr. Rahul Deshpande | 2026-11-03 14:30:00 | Rahul Sharma   |          41 | completed | paid           |
+|      18 | Dr. Vikram Shetty   | 2026-11-03 09:40:00 | Arnav Reddy    |          21 | booked    | paid           |
++---------+---------------------+---------------------+----------------+-------------+-----------+----------------+
+(4 rows)
+
+SELECT * FROM v_branch_revenue_summary ORDER BY month DESC, branch;
++-----------+--------------------+------------+--------------+-----------+-----------+---------+
+| branch_id |       branch       |   month    | appointments | completed | cancelled | revenue |
++-----------+--------------------+------------+--------------+-----------+-----------+---------+
+|         2 | Jayanagar Clinic   | 2026-11-01 |            2 |         0 |         0 | 1700.00 |
+|         1 | Koramangala Clinic | 2026-11-01 |            3 |         1 |         0 | 2600.00 |
+|         3 | Whitefield Clinic  | 2026-11-01 |            3 |         0 |         0 | 2450.00 |
+|         2 | Jayanagar Clinic   | 2026-10-01 |            4 |         4 |         0 | 3650.00 |
+|         1 | Koramangala Clinic | 2026-10-01 |            4 |         3 |         1 | 3200.00 |
+|         3 | Whitefield Clinic  | 2026-10-01 |            1 |         1 |         0 |  700.00 |
++-----------+--------------------+------------+--------------+-----------+-----------+---------+
+(6 rows)
+
+BEGIN;
+BEGIN
+SELECT appt_id, status FROM appointments WHERE status = 'booked' ORDER BY appt_id LIMIT 1 
+CALL sp_complete_appointment(11, 'Viral pharyngitis', 'Warm saline gargles', CURRENT_DATE + 7,
+     '[{"medicine":"Paracetamol 650 mg","dosage":"1 tab","frequency":"Thrice daily","duration_days":3}]');
+CALL
+SELECT a.appt_id, a.status, r.diagnosis, i.medicine
+FROM appointments a JOIN prescriptions r USING (appt_id) JOIN prescription_items i USING (rx_id)
+WHERE a.appt_id = 11;
++---------+-----------+-------------------+--------------------+
+| appt_id |  status   |     diagnosis     |      medicine      |
++---------+-----------+-------------------+--------------------+
+|      11 | completed | Viral pharyngitis | Paracetamol 650 mg |
++---------+-----------+-------------------+--------------------+
+(1 row)
+
+ROLLBACK;
+ROLLBACK
+BEGIN;
+BEGIN
+INSERT INTO appointments(patient_id, doctor_id, branch_id, start_time, end_time)
+SELECT (SELECT user_id FROM users WHERE email = 'sara@demo.clinic'), a.doctor_id, a.branch_id, a.start_time, a.end_time
+FROM appointments a WHERE a.status = 'booked' ORDER BY a.appt_id LIMIT 1;
+psql:db/05_dml_queries.sql:106: ERROR:  Double booking blocked: the doctor already has appointment #11 in this slot.
+CONTEXT:  PL/pgSQL function trg_fn_validate_appointment() line 69 at RAISE
+ROLLBACK;
+ROLLBACK

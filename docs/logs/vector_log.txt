@@ -1,0 +1,137 @@
+Border style is 2.
+SELECT table_name, column_name, udt_name FROM information_schema.columns WHERE udt_name = 'vector';
++-----------------+-----------------+----------+
+|   table_name    |   column_name   | udt_name |
++-----------------+-----------------+----------+
+| symptom_reports | embedding       | vector   |
+| doctors         | notes_embedding | vector   |
++-----------------+-----------------+----------+
+(2 rows)
+
+SELECT indexname, indexdef FROM pg_indexes WHERE indexdef ILIKE '%hnsw%';
++-----------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
+|       indexname       |                                                                indexdef                                                                 |
++-----------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
+| ix_doctors_notes_hnsw | CREATE INDEX ix_doctors_notes_hnsw ON public.doctors USING hnsw (notes_embedding vector_cosine_ops) WITH (m='16', ef_construction='64') |
+| ix_reports_emb_hnsw   | CREATE INDEX ix_reports_emb_hnsw ON public.symptom_reports USING hnsw (embedding vector_cosine_ops) WITH (m='16', ef_construction='64') |
++-----------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
+(2 rows)
+
+SELECT u.full_name, vector_dims(d.notes_embedding) AS dims, round(vector_norm(d.notes_embedding)::numeric, 4) AS l2_norm
+FROM doctors d JOIN users u ON u.user_id = d.doctor_id LIMIT 3;
++-------------------+------+---------+
+|     full_name     | dims | l2_norm |
++-------------------+------+---------+
+| Dr. Ananya Rao    |  384 |  1.0000 |
+| Dr. Karthik Menon |  384 |  1.0000 |
+| Dr. Vikram Shetty |  384 |  1.0000 |
++-------------------+------+---------+
+(3 rows)
+
+SELECT sr.report_id, left(sr.description, 60) AS symptoms FROM symptom_reports sr WHERE sr.report_id = 3;
++-----------+--------------------------------------------------------------+
+| report_id |                           symptoms                           |
++-----------+--------------------------------------------------------------+
+|         3 | Pounding headache on one side with nausea and sensitivity to |
++-----------+--------------------------------------------------------------+
+(1 row)
+
+SELECT u.full_name, s.name AS specialization,
+       round((1 - (d.notes_embedding <=> q.embedding))::numeric, 4) AS cosine_similarity
+FROM doctors d
+JOIN users u ON u.user_id = d.doctor_id
+JOIN specializations s ON s.spec_id = d.spec_id,
+     (SELECT embedding FROM symptom_reports WHERE report_id = 3) q
+ORDER BY d.notes_embedding <=> q.embedding
+LIMIT 3;
++------------------+------------------+-------------------+
+|    full_name     |  specialization  | cosine_similarity |
++------------------+------------------+-------------------+
+| Dr. Kavya Reddy  | Neurology        |            0.5796 |
+| Dr. Arjun Bhat   | Neurology        |            0.5517 |
+| Dr. Sanjay Gupta | Gastroenterology |            0.2836 |
++------------------+------------------+-------------------+
+(3 rows)
+
+SELECT * FROM fn_recommend_doctors((SELECT embedding FROM symptom_reports WHERE report_id = 6), 3, NULL);
++-----------+-------------------+----------------+--------------------+------------------+------------------+------------+----------+--------+
+| doctor_id |     full_name     | specialization |       branch       | consultation_fee | years_experience | similarity | load_pct | score  |
++-----------+-------------------+----------------+--------------------+------------------+------------------+------------+----------+--------+
+|         4 | Dr. Vikram Shetty | Cardiology     | Koramangala Clinic |          1200.00 |               18 |     0.4682 |      6.3 | 0.4669 |
+|         5 | Dr. Meera Iyer    | Cardiology     | Jayanagar Clinic   |          1100.00 |               14 |     0.4572 |      0.0 | 0.4572 |
+|        11 | Dr. Kavya Reddy   | Neurology      | Koramangala Clinic |          1000.00 |                8 |     0.4275 |      0.0 | 0.4275 |
++-----------+-------------------+----------------+--------------------+------------------+------------------+------------+----------+--------+
+(3 rows)
+
+SELECT doctor_id, full_name, specialization, branch, similarity
+FROM fn_recommend_doctors((SELECT embedding FROM symptom_reports WHERE report_id = 6), 3,
+                          (SELECT branch_id FROM branches WHERE name = 'Whitefield Clinic'));
++-----------+--------------------+------------------+-------------------+------------+
+| doctor_id |     full_name      |  specialization  |      branch       | similarity |
++-----------+--------------------+------------------+-------------------+------------+
+|        19 | Dr. Nisha Kapoor   | Psychiatry       | Whitefield Clinic |     0.3698 |
+|        17 | Dr. Fatima Sheikh  | Pulmonology      | Whitefield Clinic |     0.3684 |
+|         9 | Dr. Lakshmi Prasad | Gastroenterology | Whitefield Clinic |     0.2888 |
++-----------+--------------------+------------------+-------------------+------------+
+(3 rows)
+
+SELECT * FROM fn_similar_case_specialties((SELECT embedding FROM symptom_reports WHERE report_id = 1), 10);
++----------------+-------+----------------+
+| specialization | cases | avg_similarity |
++----------------+-------+----------------+
+| Dermatology    |     1 |         1.0000 |
++----------------+-------+----------------+
+(1 row)
+
+SET enable_seqscan = off;
+SET
+EXPLAIN (COSTS OFF)
+SELECT doctor_id FROM doctors
+ORDER BY notes_embedding <=> (SELECT embedding FROM symptom_reports WHERE report_id = 1) LIMIT 3;
++------------------------------------------------------------------+
+|                            QUERY PLAN                            |
++------------------------------------------------------------------+
+| Limit                                                            |
+|   InitPlan 1 (returns $0)                                        |
+|     ->  Index Scan using symptom_reports_pkey on symptom_reports |
+|           Index Cond: (report_id = 1)                            |
+|   ->  Index Scan using ix_doctors_notes_hnsw on doctors          |
+|         Order By: (notes_embedding <=> $0)                       |
++------------------------------------------------------------------+
+(6 rows)
+
+RESET enable_seqscan;
+RESET
+BEGIN;
+BEGIN
+UPDATE doctors SET notes_embedding = (SELECT embedding FROM symptom_reports WHERE report_id = 1), embedded_at = now()
+WHERE doctor_id = (SELECT user_id FROM users WHERE email = 'priya.nair@demo.clinic')
+RETURNING doctor_id, vector_dims(notes_embedding), embedded_at;
++-----------+-------------+----------------------------+
+| doctor_id | vector_dims |        embedded_at         |
++-----------+-------------+----------------------------+
+|         6 |         384 | 2026-11-02 18:44:34.538633 |
++-----------+-------------+----------------------------+
+(1 row)
+
+UPDATE 1
+DELETE FROM symptom_reports WHERE report_id = 16 RETURNING report_id;
++-----------+
+| report_id |
++-----------+
+|        16 |
++-----------+
+(1 row)
+
+DELETE 1
+ROLLBACK;
+ROLLBACK
+SELECT count(*) AS fts_hits FROM doctors
+WHERE search_tsv @@ plainto_tsquery('english', 'itchy red patches on my elbows that flake off');
++----------+
+| fts_hits |
++----------+
+|        0 |
++----------+
+(1 row)
+

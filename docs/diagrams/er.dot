@@ -1,0 +1,56 @@
+graph ER {
+  graph [layout=neato, overlap=false, splines=true, sep="+12", bgcolor="white", pad=0.3, fontname="Helvetica"];
+  node  [fontname="Helvetica", fontsize=11];
+  edge  [fontname="Helvetica", fontsize=10, color="#444444"];
+
+  // entities
+  node [shape=box, style=filled, fillcolor="#dff0ea", color="#0f6b5c", penwidth=1.4];
+  USER [label="USER"]; BRANCH [label="BRANCH"]; SPEC [label="SPECIALIZATION"]; APPT [label="APPOINTMENT"];
+  PAY [label="PAYMENT"]; RX [label="PRESCRIPTION"]; SR [label="SYMPTOM_REPORT"];
+  PATIENT [label="PATIENT"]; DOCTOR [label="DOCTOR"];
+  // weak entities
+  node [shape=box, peripheries=2, fillcolor="#fff1d6", color="#9a6700"];
+  AVAIL [label="AVAILABILITY\n(weak)"]; ITEM [label="RX_ITEM\n(weak)"]; REC [label="RECOMMENDATION\n(weak)"];
+  // ISA
+  node [shape=invtriangle, peripheries=1, fillcolor="#eeeeee", color="#555555", label="ISA", fontsize=9, width=0.5, height=0.4];
+  ISA;
+  // relationships
+  node [shape=diamond, fillcolor="#e8eefc", color="#2948a8", fontsize=10, width=0.9, height=0.6];
+  r_books [label="BOOKS"]; r_attends [label="ATTENDS"]; r_spec [label="HAS_SPEC"]; r_works [label="WORKS_AT"];
+  r_pays [label="PAID_BY"]; r_rx [label="RESULTS_IN"]; r_reports [label="REPORTS"]; r_from [label="TRIGGERED_BY"];
+  r_items [label="CONTAINS", peripheries=2]; r_avail [label="HAS_SHIFT", peripheries=2]; r_rec [label="RECOMMENDS", peripheries=2];
+  r_held [label="HELD_AT"];
+  // attributes (selected; key underlined via label)
+  node [shape=ellipse, fillcolor="white", color="#888888", fontsize=9, width=0.3, height=0.3, peripheries=1];
+  a_uid [label=<<u>user_id</u>>]; a_email [label="email"]; a_role [label="role"]; a_hash [label="password_hash"];
+  a_name [label="full_name"];
+  a_dob [label="date_of_birth"]; a_age [label="age", style="dashed,filled"]; a_blood [label="blood_group"];
+  a_fee [label="consultation_fee"]; a_notes [label="specialization_notes"]; a_emb [label="notes_embedding\nVECTOR(384)", color="#0f6b5c"];
+  a_bid [label=<<u>branch_id</u>>]; a_addr [label="address", peripheries=1]; a_street [label="street"]; a_city [label="city"]; a_pin [label="pincode"];
+  a_aid [label=<<u>appt_id</u>>]; a_slot [label="slot\n(start,end)"]; a_status [label="status"];
+  a_rid [label=<<u>report_id</u>>]; a_desc [label="description"]; a_semb [label="embedding\nVECTOR(384)", color="#0f6b5c"]; a_sev [label="severity"];
+  a_wd [label=<<u>weekday, start</u>>]; a_ln [label=<<u>line_no</u>>]; a_rank [label=<<u>rank</u>>]; a_sim [label="similarity"];
+  a_phone [label="phone"];
+
+  USER -- a_uid; USER -- a_email; USER -- a_role; USER -- a_hash; USER -- a_name; USER -- a_phone;
+  USER -- ISA [penwidth=2]; ISA -- PATIENT; ISA -- DOCTOR;
+  PATIENT -- a_dob; PATIENT -- a_age; PATIENT -- a_blood;
+  DOCTOR -- a_fee; DOCTOR -- a_notes; DOCTOR -- a_emb;
+  BRANCH -- a_bid; BRANCH -- a_addr; a_addr -- a_street; a_addr -- a_city; a_addr -- a_pin;
+  APPT -- a_aid; APPT -- a_slot; APPT -- a_status;
+  SR -- a_rid; SR -- a_desc; SR -- a_semb; SR -- a_sev;
+  AVAIL -- a_wd; ITEM -- a_ln; REC -- a_rank; REC -- a_sim;
+
+  PATIENT -- r_books [label="1"]; r_books -- APPT [label="N", penwidth=2];
+  DOCTOR -- r_attends [label="1"]; r_attends -- APPT [label="N", penwidth=2];
+  DOCTOR -- r_spec [label="N", penwidth=2]; r_spec -- SPEC [label="1"];
+  DOCTOR -- r_works [label="N", penwidth=2]; r_works -- BRANCH [label="1"];
+  APPT -- r_held [label="N", penwidth=2]; r_held -- BRANCH [label="1"];
+  APPT -- r_pays [label="1", penwidth=2]; r_pays -- PAY [label="1", penwidth=2];
+  APPT -- r_rx [label="1"]; r_rx -- RX [label="0..1", penwidth=2];
+  RX -- r_items [label="1"]; r_items -- ITEM [label="N", penwidth=2];
+  DOCTOR -- r_avail [label="1"]; r_avail -- AVAIL [label="N", penwidth=2];
+  PATIENT -- r_reports [label="1"]; r_reports -- SR [label="N", penwidth=2];
+  SR -- r_from [label="0..1"]; r_from -- APPT [label="N"];
+  SR -- r_rec [label="1"]; r_rec -- REC [label="≤3", penwidth=2]; REC -- DOCTOR [label="N", style=dashed];
+}

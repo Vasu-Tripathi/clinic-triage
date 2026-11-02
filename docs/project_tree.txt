@@ -1,0 +1,107 @@
+clinic-triage/
+├── app/
+│   ├── admin/
+│   │   ├── appointments/
+│   │   │   └── page.js
+│   │   ├── audit/
+│   │   │   └── page.js
+│   │   ├── doctors/
+│   │   │   └── page.js
+│   │   ├── layout.js
+│   │   └── page.js
+│   ├── api/
+│   │   ├── admin/
+│   │   │   ├── audit/
+│   │   │   │   └── route.js
+│   │   │   ├── branches/
+│   │   │   │   ├── [id]/
+│   │   │   │   │   └── route.js
+│   │   │   │   └── route.js
+│   │   │   ├── demand/
+│   │   │   │   └── route.js
+│   │   │   ├── doctors/
+│   │   │   │   ├── [id]/
+│   │   │   │   │   └── route.js
+│   │   │   │   └── route.js
+│   │   │   └── stats/
+│   │   │       └── route.js
+│   │   ├── appointments/
+│   │   │   ├── [id]/
+│   │   │   │   └── route.js
+│   │   │   └── route.js
+│   │   ├── auth/
+│   │   │   ├── login/
+│   │   │   │   └── route.js
+│   │   │   ├── logout/
+│   │   │   │   └── route.js
+│   │   │   ├── me/
+│   │   │   │   └── route.js
+│   │   │   └── register/
+│   │   │       └── route.js
+│   │   ├── branches/
+│   │   │   └── route.js
+│   │   ├── doctor/
+│   │   │   ├── complete/
+│   │   │   │   └── route.js
+│   │   │   ├── profile/
+│   │   │   │   └── route.js
+│   │   │   └── schedule/
+│   │   │       └── route.js
+│   │   ├── doctors/
+│   │   │   └── [id]/
+│   │   │       └── slots/
+│   │   │           └── route.js
+│   │   └── triage/
+│   │       └── route.js
+│   ├── doctor/
+│   │   ├── profile/
+│   │   │   └── page.js
+│   │   ├── layout.js
+│   │   └── page.js
+│   ├── login/
+│   │   └── page.js
+│   ├── patient/
+│   │   ├── appointments/
+│   │   │   └── page.js
+│   │   ├── layout.js
+│   │   └── page.js
+│   ├── register/
+│   │   └── page.js
+│   ├── globals.css
+│   ├── layout.js
+│   └── page.js
+├── components/
+│   └── Shell.js
+├── db/
+│   ├── 01_schema.sql
+│   ├── 02_functions_triggers.sql
+│   ├── 03_views.sql
+│   ├── 04_security.sql
+│   ├── 05_dml_queries.sql
+│   └── 06_vector_commands.sql
+├── docs/
+│   ├── diagrams/
+│   │   ├── er.dot
+│   │   ├── er_diagram.png
+│   │   ├── schema.dot
+│   │   └── schema_diagram.png
+│   └── project_tree.txt
+├── lib/
+│   ├── api.mjs
+│   ├── auth.mjs
+│   ├── client.js
+│   ├── db.mjs
+│   ├── embed.mjs
+│   └── validators.mjs
+├── scripts/
+│   ├── seed-data.mjs
+│   ├── setup-db.mjs
+│   └── test-db.mjs
+├── .env.example
+├── .gitignore
+├── README.md
+├── jsconfig.json
+├── middleware.js
+├── next.config.mjs
+├── package-lock.json
+└── package.json

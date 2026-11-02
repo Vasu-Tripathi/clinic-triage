@@ -1,0 +1,19 @@
+digraph A {
+  graph [rankdir=TB, bgcolor=white, nodesep=0.5, ranksep=0.7, fontname="Helvetica", pad=0.3, compound=true];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#ffffff", color="#5b6b66"];
+  edge [fontname="Helvetica", fontsize=9, color="#5b6b66"];
+  subgraph cluster_b { label="Browser (React client components)"; style="rounded,dashed"; color="#9aa8a3"; fontsize=11;
+    P [label="Patient UI\nsymptom triage · booking\nhistory · prescriptions"]; Dc [label="Doctor UI\ndaily schedule · load\nconsult + Rx · profile"]; Ad [label="Admin UI\ndashboard · appointments\ndoctors/branches · audit"]; }
+  subgraph cluster_n { label="Next.js 14 server (Node.js)"; style="rounded"; color="#0f6b5c"; fontsize=11;
+    MW [label="middleware.js\nJWT cookie → role route guard", fillcolor="#e3f1ed"];
+    API [label="Route Handlers /api/*\nZod validation · bcrypt · JWT\nrole check per route", fillcolor="#e3f1ed"];
+    EMB [label="lib/embed.mjs\nall-MiniLM-L6-v2 (ONNX)\n384-d, mean-pooled, L2-norm", fillcolor="#fff1d6"];
+    DB [label="lib/db.mjs  withUser()\nBEGIN · SET LOCAL ROLE clinic_<role>\nset_config('app.user_id') · COMMIT/ROLLBACK", fillcolor="#e3f1ed"]; }
+  subgraph cluster_pg { label="PostgreSQL 16  (single instance)"; style="rounded"; color="#2948a8"; fontsize=11;
+    REL [label="Relational tables\nusers · patients · doctors · branches\nappointments · payments · prescriptions\nPK/FK · CHECK · EXCLUDE · indexes", fillcolor="#e8eefc"];
+    VEC [label="pgvector\ndoctors.notes_embedding VECTOR(384)\nsymptom_reports.embedding VECTOR(384)\nHNSW (vector_cosine_ops)", fillcolor="#e8eefc"];
+    LOGIC [label="Triggers · functions · procedure\nviews · materialized view\nRoles + GRANTs + RLS policies", fillcolor="#e8eefc"]; }
+  P -> MW; Dc -> MW; Ad -> MW; MW -> API [label="HTTPS JSON"];
+  API -> EMB [label="symptom / notes text"]; EMB -> API [label="vector"];
+  API -> DB; DB -> REL [label="SQL as clinic_app\n(env credentials)"]; DB -> VEC [label="<=> cosine k-NN"]; REL -> LOGIC [dir=both, style=dashed]; VEC -> LOGIC [dir=both, style=dashed];
+}
