@@ -85,4 +85,4 @@ middleware.js   role-based route protection
 | Member | SRN | Responsibilities |
 |---|---|---|
 | Vasu | PES1UG24AM918 | **DB:** ER model, schema/DDL, constraints & indexes, validation/payment/refund triggers, booking transaction, pgvector embeddings + HNSW + `fn_recommend_doctors`. **App:** embedding pipeline, patient triage & booking pages + APIs, seed data |
-| _Partner_ | _SRN_ | **DB:** views + materialized view, daily-load function, recursive-CTE slots, `sp_complete_appointment`, audit trigger, roles/GRANTs/RLS, analytics queries. **App:** auth (bcrypt, JWT, middleware), doctor & admin pages + APIs, test suite, docs |
+| Avaneesh N | PES1UG24AM917 | **DB:** views + materialized view, daily-load function, recursive-CTE slots, `sp_complete_appointment`, audit trigger, roles/GRANTs/RLS, analytics queries. **App:** auth (bcrypt, JWT, middleware), doctor & admin pages + APIs, test suite, docs |
