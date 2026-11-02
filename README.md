@@ -15,7 +15,7 @@ embeddings run locally with Transformers.js (no paid API) · bcrypt + JWT (httpO
 | Free-text symptom descriptions, doctor specialization notes | pgvector `VECTOR(384)` + HNSW | “my heart races when I climb stairs” shares **no keywords** with “palpitations, arrhythmia” — only semantic similarity can match it. Full-text search returns 0 hits for most lay descriptions (shown in the UI). |
 
 Both live in the same PostgreSQL instance, so a single query can combine similarity search with relational
-filters (active doctors, branch, tomorrow's load) and the booking stays ACID.
+filters (active doctors, branch, tomorrow's load) and the booking stays ACID..
 
 ## Features → requirements
 
