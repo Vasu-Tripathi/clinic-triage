@@ -1,0 +1,23 @@
+{
+  "name": "clinic-triage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI Symptom-to-Specialist Clinic Triage System — Next.js + PostgreSQL + pgvector",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "db:setup": "node --env-file=.env.local scripts/setup-db.mjs",
+    "test:db": "node --env-file=.env.local scripts/test-db.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.7.6",
+    "bcryptjs": "2.4.3",
+    "jose": "5.9.6",
+    "next": "14.2.35",
+    "pg": "8.13.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "3.23.8"
+  }
+}
