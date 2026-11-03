@@ -17,7 +17,7 @@ export const specializations = [
   ['Pulmonology', 'Lungs and breathing: chronic cough, wheezing, asthma, shortness of breath, COPD, tuberculosis, sleep apnea, chest infections.'],
   ['Psychiatry', 'Mental health: anxiety, panic attacks, low mood, depression, stress, sleep problems, insomnia, mood swings, addiction, concentration issues.'],
   ['Endocrinology', 'Hormones and metabolism: diabetes, high blood sugar, thyroid problems, unexplained weight gain or loss, excessive thirst, PCOS hormones, fatigue from hormonal causes.'],
-  ['Urology', 'Urinary tract and male reproductive health: burning urination, frequent urination, kidney stones, blood in urine, prostate problems, flank pain.'],
+  ['Urology', 'Urinary tract and male reproductive health: burning urination, frequent urination, kidney stones, blood in urine, prostate problems, flank pain, testicular pain or swelling, scrotal lumps.'],
   ['Gynecology', 'Women\'s reproductive health: irregular periods, menstrual cramps, heavy bleeding, pregnancy care, PCOS, vaginal discharge, menopause symptoms, pelvic pain.'],
   ['Pediatrics', 'Children and infants: fever in children, vaccinations, growth and development, childhood infections, feeding problems, child cough and cold.'],
 ];
@@ -44,7 +44,7 @@ export const doctors = [
   ['Dr. Nisha Kapoor', 'Psychiatry', 2, 'KMC-16077', 6, 900, 45, 'Mental health clinic for mood swings, burnout, sleep problems, attention and concentration difficulty, OCD and substance use concerns.'],
   ['Dr. Ramesh Babu', 'Endocrinology', 0, 'KMC-16540', 17, 1000, 20, 'Endocrinologist managing diabetes, high sugar levels, excessive thirst and frequent urination, thyroid disorders, goitre, sudden weight gain or loss.'],
   ['Dr. Pooja Malhotra', 'Gynecology', 1, 'KMC-17020', 12, 900, 20, 'Gynecologist for irregular or missed periods, painful menstrual cramps, heavy bleeding, PCOS, pregnancy and antenatal care, pelvic pain and menopause.'],
-  ['Dr. Harish Gowda', 'Urology', 2, 'KMC-17501', 14, 900, 20, 'Urologist for kidney stones, severe flank pain, burning while passing urine, urinary infections, blood in urine and prostate enlargement.'],
+  ['Dr. Harish Gowda', 'Urology', 2, 'KMC-17501', 14, 900, 20, 'Urologist for kidney stones, severe flank pain, burning while passing urine, urinary infections, blood in urine, prostate enlargement, and men\'s health: testicular pain or swelling, twisted testicle (torsion), scrotal lumps and groin pain in men.'],
   ['Dr. Shalini Murthy', 'Pediatrics', 0, 'KMC-18012', 10, 600, 15, 'Pediatrician for babies and children: fever in kids, vaccinations, cough and cold in children, ear infections in children, growth monitoring and feeding issues.'],
 ];
 
